@@ -16,10 +16,23 @@ const PORT = process.env.PORT || 3001;
 
 app.use(bot.webhookCallback('/webhook-path'));
 
+// Эндпоинт для получения данных пользователя
+app.post('/get-user-data', (req, res) => {
+  const { userId } = req.body;
+  bot.telegram.getChat(userId)
+    .then(user => {
+      res.json({ username: user.username, first_name: user.first_name, last_name: user.last_name });
+    })
+    .catch(err => {
+      console.error('Failed to get user data', err);
+      res.status(500).send('Failed to get user data');
+    });
+});
+
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   // Введите ваш URL вручную после запуска ngrok
-  const ngrokUrl = 'https://b6fb-2a03-f80-4416-1f1a-00-1.ngrok-free.app'; // Замените на ваш URL
+  const ngrokUrl = 'https://6b07-91-132-95-56.ngrok-free.app'; // Замените на ваш URL
   bot.telegram.setWebhook(`${ngrokUrl}/webhook-path`)
     .then(() => {
       console.log(`Webhook set to ${ngrokUrl}/webhook-path`);
@@ -36,3 +49,4 @@ io.on('connection', (socket) => {
     console.log('Client disconnected');
   });
 });
+
