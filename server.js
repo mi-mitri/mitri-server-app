@@ -18,7 +18,7 @@ io.on('connection', (socket) => {
 });
 
 // Использование ngrok для публичного URL (замените на ваш URL)
-const NGROK_URL = 'https://1db6-94-198-40-98.ngrok-free.app';
+const NGROK_URL = 'https://f109-91-132-95-56.ngrok-free.app';
 
 // Настройка webhook для бота
 bot.telegram.setWebhook(`${NGROK_URL}/webhook-path`);
