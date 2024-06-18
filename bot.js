@@ -8,7 +8,7 @@ bot.start((ctx) => {
   ctx.reply('Welcome to the MiniApp! Click the link below to start using the app:', {
     reply_markup: {
       inline_keyboard: [[
-        { text: "Open MiniApp", url: "https://192.168.0.188:3000" }
+        { text: "Open MiniApp", url: "http://192.168.0.188:3000" }
       ]]
     }
   });
