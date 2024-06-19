@@ -51,3 +51,4 @@ sequelize.sync().then(() => {
 });
 
 module.exports = { sequelize, User };
+
