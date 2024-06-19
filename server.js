@@ -62,12 +62,6 @@ app.post('/save-progress', (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  const ngrokUrl = 'https://6b07-91-132-95-56.ngrok-free.app'; // Замените на ваш URL
-  bot.telegram.setWebhook(`${ngrokUrl}/webhook-path`)
-    .then(() => {
-      console.log(`Webhook set to ${ngrokUrl}/webhook-path`);
-    })
-    .catch(err => console.error('Failed to set webhook or launch bot', err));
 });
 
 io.on('connection', (socket) => {
