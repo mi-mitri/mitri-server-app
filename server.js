@@ -34,31 +34,42 @@ pool.connect((err) => {
 
 app.post('/get-user-data', (req, res) => {
   const { userId } = req.body;
-  console.log(`Fetching data for user: ${userId}`);
-  pool.query('SELECT * FROM users WHERE user_id = $1', [userId], (error, results) => {
+  pool.query('SELECT * FROM users WHERE telegram_id = $1', [userId], (error, results) => {
     if (error) {
       console.error('Error fetching user data', error);
       res.status(500).send('Error fetching user data');
     } else {
-      console.log(`User data: ${JSON.stringify(results.rows[0])}`);
-      res.json(results.rows[0]);
+      if (results.rows.length === 0) {
+        const initData = req.body;
+        pool.query(
+          'INSERT INTO users (telegram_id, username, first_name, last_name, coins, coin_rate, energy, max_energy) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+          [initData.user.id, initData.user.username, initData.user.first_name, initData.user.last_name, 0, 0, 1000, 1000],
+          (insertError, insertResults) => {
+            if (insertError) {
+              console.error('Error inserting user data', insertError);
+              res.status(500).send('Error inserting user data');
+            } else {
+              res.json(insertResults.rows[0]);
+            }
+          }
+        );
+      } else {
+        res.json(results.rows[0]);
+      }
     }
   });
 });
 
 app.post('/save-progress', (req, res) => {
   const { userId, coins, coinRate, energy, maxEnergy, upgrades } = req.body;
-  console.log(`Saving data for user: ${userId}`);
-  console.log(`Data to save: ${JSON.stringify(req.body)}`);
   pool.query(
-    'INSERT INTO users (user_id, coins, coin_rate, energy, max_energy, upgrades) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (user_id) DO UPDATE SET coins = $2, coin_rate = $3, energy = $4, max_energy = $5, upgrades = $6',
+    'INSERT INTO users (telegram_id, coins, coin_rate, energy, max_energy, upgrades) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (telegram_id) DO UPDATE SET coins = $2, coin_rate = $3, energy = $4, max_energy = $5, upgrades = $6',
     [userId, coins, coinRate, energy, maxEnergy, JSON.stringify(upgrades)],
     (error, results) => {
       if (error) {
         console.error('Error saving user data', error);
         res.status(500).send('Error saving user data');
       } else {
-        console.log(`User data saved successfully`);
         res.sendStatus(200);
       }
     }
