@@ -1,13 +1,11 @@
 const { Sequelize, DataTypes } = require('sequelize');
 require('dotenv').config();
 
-// Настройка подключения к базе данных
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
   host: process.env.DB_HOST,
   dialect: 'postgres',
 });
 
-// Определение модели пользователя
 const User = sequelize.define('User', {
   telegram_id: {
     type: DataTypes.BIGINT,
@@ -48,7 +46,6 @@ const User = sequelize.define('User', {
   },
 });
 
-// Синхронизация модели с базой данных
 sequelize.sync().then(() => {
   console.log('Database & tables created!');
 });

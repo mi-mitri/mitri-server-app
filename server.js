@@ -1,45 +1,71 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const { User } = require('./db'); // Подключаем модель пользователя
+const http = require('http');
+const WebSocket = require('ws');
+const { User } = require('./db');
+const bot = require('./bot');
+require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 const PORT = process.env.PORT || 3001;
 
 app.use(bodyParser.json());
 
-// Получение данных пользователя
-app.post('/get-user-data', async (req, res) => {
-  const { userId } = req.body;
-  try {
-    const user = await User.findOne({ where: { telegram_id: userId } });
-    if (user) {
-      res.json(user);
-    } else {
-      res.status(404).send('User not found');
+// WebSocket логика
+wss.on('connection', (ws) => {
+  console.log('Client connected');
+
+  ws.on('message', async (message) => {
+    const data = JSON.parse(message);
+
+    if (data.type === 'get-user-data') {
+      const { userId } = data.payload;
+      try {
+        const user = await User.findOne({ where: { telegram_id: userId } });
+        if (user) {
+          ws.send(JSON.stringify({ type: 'user-data', payload: user }));
+        } else {
+          ws.send(JSON.stringify({ type: 'error', payload: 'User not found' }));
+        }
+      } catch (error) {
+        console.error('Failed to get user data', error);
+        ws.send(JSON.stringify({ type: 'error', payload: 'Failed to get user data' }));
+      }
     }
-  } catch (error) {
-    console.error('Failed to get user data', error);
-    res.status(500).send('Failed to get user data');
-  }
+
+    if (data.type === 'save-progress') {
+      const { userId, coins, coinRate, energy, maxEnergy } = data.payload;
+      try {
+        const user = await User.findOne({ where: { telegram_id: userId } });
+        if (user) {
+          user.coins = coins;
+          user.coin_rate = coinRate;
+          user.energy = energy;
+          user.max_energy = maxEnergy;
+          await user.save();
+          ws.send(JSON.stringify({ type: 'success', payload: 'Progress saved successfully' }));
+        } else {
+          ws.send(JSON.stringify({ type: 'error', payload: 'User not found' }));
+        }
+      } catch (error) {
+        console.error('Failed to save progress', error);
+        ws.send(JSON.stringify({ type: 'error', payload: 'Failed to save progress' }));
+      }
+    }
+  });
+
+  ws.on('close', () => {
+    console.log('Client disconnected');
+  });
 });
 
-// Сохранение прогресса пользователя
-app.post('/save-progress', async (req, res) => {
-  const { userId, coins, coinRate, energy, maxEnergy, upgrades } = req.body;
-  try {
-    await User.update(
-      { coins, coin_rate: coinRate, energy, max_energy: maxEnergy, upgrades },
-      { where: { telegram_id: userId } }
-    );
-    res.send('Progress saved successfully');
-  } catch (error) {
-    console.error('Failed to save progress', error);
-    res.status(500).send('Failed to save progress');
-  }
-});
-
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  bot.launch()
+    .then(() => console.log('Bot is running...'))
+    .catch(err => console.error('Failed to launch bot', err));
 });
 
 
