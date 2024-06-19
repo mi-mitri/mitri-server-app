@@ -16,6 +16,28 @@ const PORT = process.env.PORT || 3001;
 
 app.use(bot.webhookCallback('/webhook-path'));
 
+const { Pool } = require('pg');
+require('dotenv').config();
+
+const pool = new Pool({
+  user: process.env.DB_USER,
+  host: '83.166.239.183',
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT || 5432,
+});
+
+pool.connect((err) => {
+  if (err) {
+    console.error('Error connecting to the database', err);
+  } else {
+    console.log('Connected to the database');
+  }
+});
+
+module.exports = pool;
+
+
 // Эндпоинт для получения данных пользователя
 app.post('/get-user-data', (req, res) => {
   const { userId } = req.body;
